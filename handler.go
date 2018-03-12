@@ -35,20 +35,20 @@ var record struct {
 func (gip GeoIP) addGeoIPHeaders(w http.ResponseWriter, r *http.Request) {
 	clientIP, _ := getClientIP(r, true)
 
-	err := gip.Config.DBHandler.Lookup(clientIP, &record)
+	err := gip.DBHandler.Lookup(clientIP, &record)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
-	w.Header().Add(gip.Config.HeaderNameCountryCode, record.Country.ISOCode)
-	w.Header().Add(gip.Config.HeaderNameCountryIsEU, strconv.FormatBool(record.Country.IsInEuropeanUnion))
-	w.Header().Add(gip.Config.HeaderNameCountryName, record.Country.Names["en"])
+	r.Header.Set(gip.Config.HeaderNameCountryCode, record.Country.ISOCode)
+	r.Header.Set(gip.Config.HeaderNameCountryIsEU, strconv.FormatBool(record.Country.IsInEuropeanUnion))
+	r.Header.Set(gip.Config.HeaderNameCountryName, record.Country.Names["en"])
 
-	w.Header().Add(gip.Config.HeaderNameCityName, record.City.Names["en"])
+	r.Header.Set(gip.Config.HeaderNameCityName, record.City.Names["en"])
 
-	w.Header().Add(gip.Config.HeaderNameLocationLat, strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
-	w.Header().Add(gip.Config.HeaderNameLocationLon, strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
-	w.Header().Add(gip.Config.HeaderNameLocationTimeZone, record.Location.TimeZone)
+	r.Header.Set(gip.Config.HeaderNameLocationLat, strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
+	r.Header.Set(gip.Config.HeaderNameLocationLon, strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
+	r.Header.Set(gip.Config.HeaderNameLocationTimeZone, record.Location.TimeZone)
 }
 
 func getClientIP(r *http.Request, strict bool) (net.IP, error) {
@@ -63,10 +63,15 @@ func getClientIP(r *http.Request, strict bool) (net.IP, error) {
 		var err error
 		ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			return nil, err
+			if serr, ok := err.(*net.AddrError); ok && serr.Err == "missing port in address" { // It's not critical try parse
+				ip = r.RemoteAddr
+			} else {
+				log.Printf("Error when SplitHostPort: %v", serr.Err)
+				return nil, err
+			}
 		}
 	}
-	//	ip = "212.50.99.193"
+
 	// Parse the ip address string into a net.IP.
 	parsedIP := net.ParseIP(ip)
 	if parsedIP == nil {

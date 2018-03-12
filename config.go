@@ -2,12 +2,11 @@ package geoip
 
 import (
 	"github.com/mholt/caddy"
-	maxminddb "github.com/oschwald/maxminddb-golang"
 )
 
 // Config specifies configuration parsed for Caddyfile
 type Config struct {
-	DBHandler *maxminddb.Reader // Database's handler if it gets opened.
+	DatabasePath string
 
 	// Yout can set returned header names in config
 	// Country
@@ -51,19 +50,7 @@ func parseConfig(c *caddy.Controller) (Config, error) {
 				if !c.NextArg() {
 					continue
 				}
-				// Check if a database has already been opened
-				if config.DBHandler != nil {
-					continue
-				}
-
-				database := c.Val()
-
-				// Open the database.
-				var err error
-				config.DBHandler, err = maxminddb.Open(database)
-				if err != nil {
-					return config, c.Err("geoip: Can't open database: " + database)
-				}
+				config.DatabasePath = c.Val()
 			case "set_header_country_code":
 				if !c.NextArg() {
 					continue
