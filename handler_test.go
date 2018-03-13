@@ -32,7 +32,7 @@ func TestToResolveGeoip(t *testing.T) {
 	var (
 		gotHeaders      http.Header
 		expectedHeaders = http.Header{
-			"X-Geoip-Country-Code": []string{"CY"},
+			"X-Geoip-Country-Code": []string{"C1Y"},
 			"X-Geoip-Location-Lat": []string{"34.684100"},
 			"X-Geoip-Location-Lon": []string{"33.037900"},
 			"X-Geoip-Location-Tz":  []string{"Asia/Nicosia"},

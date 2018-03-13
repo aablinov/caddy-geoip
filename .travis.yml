@@ -1,0 +1,8 @@
+language: go
+go:
+- 1.9
+
+before_script:
+- go get -u github.com/mholt/caddy
+
+script: go test .
