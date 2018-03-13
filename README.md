@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/kodnaplakal/caddy-geoip.svg?branch=master)](https://travis-ci.org/kodnaplakal/caddy-geoip)
 ## Overview
 
 `geoip` is a Caddy plugin that allow to determine user Geolocation by IP address using MaxMind database.
