@@ -11,7 +11,7 @@
   X-Geoip-Location-Lat - Latitude, example 34.684100
   X-Geoip-Location-Lon - Longitude, example 33.037900
   X-Geoip-Location-Tz - Time zone, example Asia/Nicosia
-  X-Geoip-Country-Eu - Return `true` if country in Europen Union
+  X-Geoip-Country-Eu - Return 'true' if country in Europen Union
   X-Geoip-Country-Name - Full country name
   X-Geoip-City-Name - City name
 ```
