@@ -4,5 +4,6 @@ go:
 
 before_script:
 - go get -u github.com/mholt/caddy
+- go get -u github.com/oschwald/maxminddb-golang
 
 script: go test .

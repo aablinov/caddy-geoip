@@ -12,7 +12,7 @@ import (
 )
 
 func TestToResolveGeoip(t *testing.T) {
-	dbhandler, err := maxminddb.Open("./db/GeoLite2-City.mmdb")
+	dbhandler, err := maxminddb.Open("./test-data/GeoLite2-City.mmdb")
 	if err != nil {
 		t.Errorf("geoip: Can't open database: GeoLite2-City.mmdb")
 	}
