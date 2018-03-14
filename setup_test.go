@@ -37,6 +37,7 @@ func TestReplacers(t *testing.T) {
 	rr := httpserver.NewResponseRecorder(testResponseRecorder{
 		ResponseWriterWrapper: &httpserver.ResponseWriterWrapper{ResponseWriter: httptest.NewRecorder()},
 	})
+
 	rr.Replacer = httpserver.NewReplacer(r, rr, "-")
 
 	l.ServeHTTP(rr, r)

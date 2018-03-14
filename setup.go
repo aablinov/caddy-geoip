@@ -84,8 +84,6 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	rr, ok := w.(*httpserver.ResponseRecorder)
-	log.Printf("%v %v", rr, ok)
 
 	replacer.Set("geoip_country_code", record.Country.ISOCode)
 	replacer.Set("geoip_country_name", record.Country.Names["en"])
@@ -94,6 +92,10 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	replacer.Set("geoip_latitude", strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
 	replacer.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
 	replacer.Set("geoip_time_zone", record.Location.TimeZone)
+
+	if rr, ok := w.(*httpserver.ResponseRecorder); ok && rr.Replacer != nil {
+		rr.Replacer = replacer
+	}
 }
 
 func getClientIP(r *http.Request, strict bool) (net.IP, error) {
@@ -116,6 +118,7 @@ func getClientIP(r *http.Request, strict bool) (net.IP, error) {
 			}
 		}
 	}
+
 	// Parse the ip address string into a net.IP.
 	parsedIP := net.ParseIP(ip)
 	if parsedIP == nil {
