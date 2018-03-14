@@ -5,12 +5,13 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
+
+	"github.com/kodnaplakal/caddy/caddyhttp/httpserver"
 )
 
 func (gip GeoIP) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) {
-	gip.addGeoIPHeaders(w, r)
+	gip.addPlaceholders(w, r)
 	return gip.Next.ServeHTTP(w, r)
 }
 
@@ -32,7 +33,7 @@ var record struct {
 	} `maxminddb:"location"`
 }
 
-func (gip GeoIP) addGeoIPHeaders(w http.ResponseWriter, r *http.Request) {
+func (gip GeoIP) addPlaceholders(w http.ResponseWriter, r *http.Request) {
 	clientIP, _ := getClientIP(r, true)
 
 	err := gip.DBHandler.Lookup(clientIP, &record)
@@ -40,15 +41,21 @@ func (gip GeoIP) addGeoIPHeaders(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	r.Header.Set(gip.Config.HeaderNameCountryCode, record.Country.ISOCode)
-	r.Header.Set(gip.Config.HeaderNameCountryIsEU, strconv.FormatBool(record.Country.IsInEuropeanUnion))
-	r.Header.Set(gip.Config.HeaderNameCountryName, record.Country.Names["en"])
+	if rr, ok := w.(*httpserver.ResponseRecorder); ok && rr.Replacer != nil {
+		rr.Replacer.Set("geoip_country_code", record.Country.ISOCode)
+	}
 
-	r.Header.Set(gip.Config.HeaderNameCityName, record.City.Names["en"])
+	// repl.Set("sd", record.Country.ISOCode)
 
-	r.Header.Set(gip.Config.HeaderNameLocationLat, strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
-	r.Header.Set(gip.Config.HeaderNameLocationLon, strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
-	r.Header.Set(gip.Config.HeaderNameLocationTimeZone, record.Location.TimeZone)
+	r.Header.Set("ssdsd", record.Country.ISOCode)
+	// r.Header.Set(gip.Config.HeaderNameCountryIsEU, strconv.FormatBool(record.Country.IsInEuropeanUnion))
+	// r.Header.Set(gip.Config.HeaderNameCountryName, record.Country.Names["en"])
+
+	// r.Header.Set(gip.Config.HeaderNameCityName, record.City.Names["en"])
+
+	// r.Header.Set(gip.Config.HeaderNameLocationLat, strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
+	// r.Header.Set(gip.Config.HeaderNameLocationLon, strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
+	// r.Header.Set(gip.Config.HeaderNameLocationTimeZone, record.Location.TimeZone)
 }
 
 func getClientIP(r *http.Request, strict bool) (net.IP, error) {

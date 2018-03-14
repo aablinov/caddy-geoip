@@ -19,16 +19,6 @@ func TestToResolveGeoip(t *testing.T) {
 
 	config := Config{}
 
-	config.HeaderNameCountryCode = "X-Geoip-Country-Code"
-	config.HeaderNameCountryIsEU = "X-Geoip-Country-Eu"
-	config.HeaderNameCountryName = "X-Geoip-Country-Name"
-
-	config.HeaderNameCityName = "X-Geoip-City-Name"
-
-	config.HeaderNameLocationLat = "X-Geoip-Location-Lat"
-	config.HeaderNameLocationLon = "X-Geoip-Location-Lon"
-	config.HeaderNameLocationTimeZone = "X-Geoip-Location-Tz"
-
 	var (
 		gotHeaders      http.Header
 		expectedHeaders = http.Header{
