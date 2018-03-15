@@ -93,7 +93,7 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	replacer.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
 	replacer.Set("geoip_time_zone", record.Location.TimeZone)
 
-	if rr, ok := w.(*httpserver.ResponseRecorder); ok && rr.Replacer != nil {
+	if rr, ok := w.(*httpserver.ResponseRecorder); ok {
 		rr.Replacer = replacer
 	}
 }
