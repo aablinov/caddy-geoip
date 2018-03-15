@@ -3,44 +3,43 @@
 
 `geoip` is a Caddy plugin that allow to determine user Geolocation by IP address using MaxMind database.
 
-## Headers
+## Placeholders
 
-`geoip` set this headers:
+The following placeholders are available:
 
 ```
-  X-Geoip-Country-Code - Country ISO code, example CY for Cyprus
-  X-Geoip-Location-Lat - Latitude, example 34.684100
-  X-Geoip-Location-Lon - Longitude, example 33.037900
-  X-Geoip-Location-Tz - Time zone, example Asia/Nicosia
-  X-Geoip-Country-Eu - Return 'true' if country in Europen Union
-  X-Geoip-Country-Name - Full country name
-  X-Geoip-City-Name - City name
+  geoip_country_code - Country ISO code, example CY for Cyprus
+  geoip_latitude - Latitude, example 34.684100
+  geoip_longitude - Longitude, example 33.037900
+  geoip_time_zone - Time zone, example Asia/Nicosia
+  geoip_country_eu - Return 'true' if country in Europen Union
+  geoip_country_name - Full country name
+  geoip_city_name - City name
 ```
 
 
 ## Examples
 
-(1) Set database path:
+(1) Set database path and return country code header:
 
 ```
-geoip {
-  database /path/to/db/GeoLite2-City.mmdb
-}
+geoip /path/to/db/GeoLite2-City.mmdb
+header Country-Code {geoip_country_code}
 ```
 
-
-(2) Set custom header names.
+(2) Proxy pass headers to backend:
 
 ```
-geoip {
-  database path/to/maxmind/db
-  set_header_country_code Code
-  set_header_country_name CountryName
-  set_header_country_eu Eu
-  set_header_city_name CityName
-  set_header_location_lat Lat
-  set_header_location_lon Lon
-  set_header_location_tz TZ
+localhost
+geoip /path/to/db/GeoLite2-City.mmdb
+proxy / localhost:3000 {
+  header_upstream Country-Name {geoip_country_name}
+  header_upstream Country-Code {geoip_country_code}
+  header_upstream Country-Eu {geoip_country_eu}
+  header_upstream City-Name {geoip_city_name}
+  header_upstream Latitude {geoip_latitude}
+  header_upstream Longitude {geoip_longitude}
+  header_upstream Time-Zone {geoip_time_zone}
 }
 ```
 
