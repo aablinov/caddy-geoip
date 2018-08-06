@@ -10,8 +10,8 @@ import (
 
 	"github.com/mholt/caddy"
 	"github.com/mholt/caddy/caddyhttp/httpserver"
-	maxminddb "github.com/oschwald/maxminddb-golang"
-)
+	"github.com/oschwald/maxminddb-golang"
+	)
 
 // GeoIP represents a middleware instance
 type GeoIP struct {
@@ -20,7 +20,7 @@ type GeoIP struct {
 	Config    Config
 }
 
-var record struct {
+type GeoIPRecord struct {
 	Country struct {
 		ISOCode           string            `maxminddb:"iso_code"`
 		IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
@@ -80,6 +80,7 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	clientIP, _ := getClientIP(r, true)
 	replacer := newReplacer(r)
 
+	var record = GeoIPRecord{}
 	err := gip.DBHandler.Lookup(clientIP, &record)
 	if err != nil {
 		log.Println(err)
