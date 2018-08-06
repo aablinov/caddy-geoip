@@ -1,9 +1,23 @@
 language: go
 go:
-- 1.9
+- 1.x
+- tip
 
-before_script:
-- go get -u github.com/mholt/caddy
-- go get -u github.com/oschwald/maxminddb-golang
+matrix:
+  allow_failures:
+  - go: tip
+  fast_finish: true
 
-script: go test .
+before_install:
+  - "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go get -v github.com/golang/lint/golint; fi"
+
+install:
+  - go get -v -t ./...
+  - go get -u github.com/mholt/caddy
+  - go get -u github.com/oschwald/maxminddb-golang
+
+script:
+- go test .
+- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go get -v github.com/golang/lint/golint; fi"
+- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go vet ./...; fi"
+- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then golint .; fi"
