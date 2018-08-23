@@ -26,12 +26,12 @@ type GeoIPRecord struct {
 		ISOCode           string            `maxminddb:"iso_code"`
 		IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
 		Names             map[string]string `maxminddb:"names"`
-		GeoNameID		  uint64 			`maxminddb:"geoname_id"`
+		GeoNameID         uint64            `maxminddb:"geoname_id"`
 	} `maxminddb:"country"`
 
 	City struct {
 		Names     map[string]string `maxminddb:"names"`
-		GeoNameID uint64 			`maxminddb:"geoname_id"`
+		GeoNameID uint64            `maxminddb:"geoname_id"`
 	} `maxminddb:"city"`
 
 	Location struct {
