@@ -73,4 +73,12 @@ func TestReplacers(t *testing.T) {
 	if got, want := rr.Replacer.Replace("{geoip_geohash}"), "swpmrf13wbgg"; got != want {
 		t.Errorf("Expected custom placeholder {geoip_geohash} to be set (%s), but it wasn't; got: %s", want, got)
 	}
+
+	if got, want := rr.Replacer.Replace("{geoip_city_geoname_id}"), "146384"; got != want {
+		t.Errorf("Expected custom placeholder {geoip_city_geoname_id} to be set (%s), but it wasn't; got: %s", want, got)
+	}
+
+	if got, want := rr.Replacer.Replace("{geoip_country_geoname_id}"), "146669"; got != want {
+		t.Errorf("Expected custom placeholder {geoip_country_geoname_id} to be set (%s), but it wasn't; got: %s", want, got)
+	}
 }
