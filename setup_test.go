@@ -69,4 +69,8 @@ func TestReplacers(t *testing.T) {
 	if got, want := rr.Replacer.Replace("{geoip_time_zone}"), "Asia/Nicosia"; got != want {
 		t.Errorf("Expected custom placeholder {geoip_time_zone} to be set (%s), but it wasn't; got: %s", want, got)
 	}
+
+	if got, want := rr.Replacer.Replace("{geoip_geohash}"), "swpmrf13wbgg"; got != want {
+		t.Errorf("Expected custom placeholder {geoip_geohash} to be set (%s), but it wasn't; got: %s", want, got)
+	}
 }

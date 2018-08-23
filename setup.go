@@ -11,6 +11,7 @@ import (
 	"github.com/mholt/caddy"
 	"github.com/mholt/caddy/caddyhttp/httpserver"
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/mmcloughlin/geohash"
 	)
 
 // GeoIP represents a middleware instance
@@ -92,6 +93,7 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	replacer.Set("geoip_city_name", record.City.Names["en"])
 	replacer.Set("geoip_latitude", strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
 	replacer.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
+	replacer.Set("geoip_geohash", geohash.Encode(record.Location.Latitude, record.Location.Longitude))
 	replacer.Set("geoip_time_zone", record.Location.TimeZone)
 
 	if rr, ok := w.(*httpserver.ResponseRecorder); ok {

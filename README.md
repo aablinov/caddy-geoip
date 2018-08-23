@@ -15,6 +15,7 @@ The following placeholders are available:
   geoip_country_eu - Return 'true' if country in Europen Union
   geoip_country_name - Full country name
   geoip_city_name - City name
+  geoip_geohash - Geohash of latitude and longitude.
 ```
 
 
@@ -40,6 +41,7 @@ proxy / localhost:3000 {
   header_upstream Latitude {geoip_latitude}
   header_upstream Longitude {geoip_longitude}
   header_upstream Time-Zone {geoip_time_zone}
+  header_upstream Geohash {geoip_geohash}
 }
 ```
 
