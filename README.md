@@ -9,12 +9,15 @@ The following placeholders are available:
 
 ```
   geoip_country_code - Country ISO code, example CY for Cyprus
+  geoip_country_geoname_id - GeoNameID of the city, example 146669
   geoip_latitude - Latitude, example 34.684100
   geoip_longitude - Longitude, example 33.037900
   geoip_time_zone - Time zone, example Asia/Nicosia
   geoip_country_eu - Return 'true' if country in Europen Union
   geoip_country_name - Full country name
   geoip_city_name - City name
+  geoip_city_geoname_id - GeoNameID of the city, example 146384
+  geoip_geohash - Geohash of latitude and longitude
 ```
 
 
@@ -40,6 +43,7 @@ proxy / localhost:3000 {
   header_upstream Latitude {geoip_latitude}
   header_upstream Longitude {geoip_longitude}
   header_upstream Time-Zone {geoip_time_zone}
+  header_upstream Geohash {geoip_geohash}
 }
 ```
 

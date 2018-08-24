@@ -11,6 +11,7 @@ import (
 	"github.com/mholt/caddy"
 	"github.com/mholt/caddy/caddyhttp/httpserver"
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/mmcloughlin/geohash"
 	)
 
 // GeoIP represents a middleware instance
@@ -25,10 +26,12 @@ type GeoIPRecord struct {
 		ISOCode           string            `maxminddb:"iso_code"`
 		IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
 		Names             map[string]string `maxminddb:"names"`
+		GeoNameID         uint64            `maxminddb:"geoname_id"`
 	} `maxminddb:"country"`
 
 	City struct {
-		Names map[string]string `maxminddb:"names"`
+		Names     map[string]string `maxminddb:"names"`
+		GeoNameID uint64            `maxminddb:"geoname_id"`
 	} `maxminddb:"city"`
 
 	Location struct {
@@ -89,9 +92,12 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	replacer.Set("geoip_country_code", record.Country.ISOCode)
 	replacer.Set("geoip_country_name", record.Country.Names["en"])
 	replacer.Set("geoip_country_eu", strconv.FormatBool(record.Country.IsInEuropeanUnion))
+	replacer.Set("geoip_country_geoname_id", strconv.FormatUint(record.Country.GeoNameID, 10))
 	replacer.Set("geoip_city_name", record.City.Names["en"])
+	replacer.Set("geoip_city_geoname_id", strconv.FormatUint(record.City.GeoNameID, 10))
 	replacer.Set("geoip_latitude", strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
 	replacer.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
+	replacer.Set("geoip_geohash", geohash.Encode(record.Location.Latitude, record.Location.Longitude))
 	replacer.Set("geoip_time_zone", record.Location.TimeZone)
 
 	if rr, ok := w.(*httpserver.ResponseRecorder); ok {
