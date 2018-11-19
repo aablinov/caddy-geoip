@@ -80,15 +80,9 @@ func (gip GeoIP) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) 
 }
 
 func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
-	clientIP, _ := getClientIP(r, true)
+	record := gip.fetch_geoip_data(r)
+
 	replacer := newReplacer(r)
-
-	var record = GeoIPRecord{}
-	err := gip.DBHandler.Lookup(clientIP, &record)
-	if err != nil {
-		log.Println(err)
-	}
-
 	replacer.Set("geoip_country_code", record.Country.ISOCode)
 	replacer.Set("geoip_country_name", record.Country.Names["en"])
 	replacer.Set("geoip_country_eu", strconv.FormatBool(record.Country.IsInEuropeanUnion))
@@ -103,6 +97,32 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	if rr, ok := w.(*httpserver.ResponseRecorder); ok {
 		rr.Replacer = replacer
 	}
+}
+
+func (gip GeoIP) fetch_geoip_data(r *http.Request) GeoIPRecord {
+	clientIP, _ := getClientIP(r, true)
+
+	var record = GeoIPRecord{}
+	err := gip.DBHandler.Lookup(clientIP, &record)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if record.Country.ISOCode == "" {
+		record.Country.Names = make(map[string]string)
+		record.City.Names = make(map[string]string)
+		if clientIP.IsLoopback() {
+			record.Country.ISOCode = "**"
+			record.Country.Names["en"] = "Loopback"
+			record.City.Names["en"] = "Loopback"
+		} else {
+			record.Country.ISOCode = "!!"
+			record.Country.Names["en"] = "No Country"
+			record.City.Names["en"] = "No City"
+		}
+	}
+
+	return record
 }
 
 func getClientIP(r *http.Request, strict bool) (net.IP, error) {
