@@ -10,9 +10,9 @@ import (
 
 	"github.com/mholt/caddy"
 	"github.com/mholt/caddy/caddyhttp/httpserver"
-	"github.com/oschwald/maxminddb-golang"
 	"github.com/mmcloughlin/geohash"
-	)
+	"github.com/oschwald/maxminddb-golang"
+)
 
 // GeoIP represents a middleware instance
 type GeoIP struct {
@@ -80,7 +80,7 @@ func (gip GeoIP) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) 
 }
 
 func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
-	record := gip.fetch_geoip_data(r)
+	record := gip.fetchGeoipData(r)
 
 	replacer := newReplacer(r)
 	replacer.Set("geoip_country_code", record.Country.ISOCode)
@@ -99,7 +99,7 @@ func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (gip GeoIP) fetch_geoip_data(r *http.Request) GeoIPRecord {
+func (gip GeoIP) fetchGeoipData(r *http.Request) GeoIPRecord {
 	clientIP, _ := getClientIP(r, true)
 
 	var record = GeoIPRecord{}
