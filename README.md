@@ -1,7 +1,9 @@
 [![Build Status](https://travis-ci.org/kodnaplakal/caddy-geoip.svg?branch=master)](https://travis-ci.org/kodnaplakal/caddy-geoip)
 ## Overview
 
-`geoip` is a Caddy plugin that allow to determine user Geolocation by IP address using MaxMind database.
+`geoip` is a Caddy plugin that allow to determine
+user Geolocation by IP address using a
+[MaxMind database](https://www.maxmind.com/en/geoip2-services-and-databases).
 
 ## Placeholders
 
@@ -20,6 +22,15 @@ The following placeholders are available:
   geoip_geohash - Geohash of latitude and longitude
 ```
 
+## Missing geolocation data
+
+If there is no geolocation data for an IP address most of the placeholders
+listed above will be empty. The exceptions are `geoip_country_code`,
+`geoip_country_name`, and `geoip_city_name`. If the request originated over
+the system loopback interface (e.g., 127.0.0.1) those vars will be set
+to `**`, `Loopback`, and `Loopback` respectively. For any other address,
+including private addresses such as 192.168.0.1, the values will be `!!`,
+`No Country`, and `No City` respectively.
 
 ## Examples
 
@@ -45,6 +56,12 @@ proxy / localhost:3000 {
   header_upstream Time-Zone {geoip_time_zone}
   header_upstream Geohash {geoip_geohash}
 }
+```
+
+(3) Include the geolocation info in the access log:
+
+```
+log / {$HOME}/log/access.log "{when_iso} {status} {method} {latency_ms} ms {size} bytes {geoip_country_code} {remote} {host} {proto} \"{uri}\" \"{>User-Agent}\""
 ```
 
 ## Contributing
