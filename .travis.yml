@@ -1,23 +1,14 @@
 language: go
 go:
-- 1.x
-- tip
+- 1.12.5
 
-matrix:
-  allow_failures:
-  - go: tip
-  fast_finish: true
-
-before_install:
-  - "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go get -v github.com/golang/lint/golint; fi"
+env:
+- GO111MODULE=on
 
 install:
-  - go get -v -t ./...
-  - go get -u github.com/mholt/caddy
-  - go get -u github.com/oschwald/maxminddb-golang
+- go get -t ./...
+- go get golang.org/x/lint
+- go get -u github.com/oschwald/maxminddb-golang
 
 script:
-- go test .
-- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go get -v github.com/golang/lint/golint; fi"
-- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then go vet ./...; fi"
-- "if [[ $TRAVIS_GO_VERSION == 1.10 ]]; then golint .; fi"
+- go vet ./...
