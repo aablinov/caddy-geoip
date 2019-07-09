@@ -1,7 +1,7 @@
 package geoip
 
 import (
-	"github.com/mholt/caddy"
+	"github.com/caddyserver/caddy"
 )
 
 // Config specifies configuration parsed for Caddyfile
