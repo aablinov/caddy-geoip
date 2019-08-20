@@ -74,4 +74,4 @@ log / {$HOME}/log/access.log "{when_iso} {status} {method} {latency_ms} ms {size
 
 ## Contributors
 
-- [kodnaplakal](https://github.com/kodnaplakal) Andrey Blinov - creator, maintainer
+- [aablinoov](https://github.com/aablinov) Andrey Blinov - creator, maintainer
