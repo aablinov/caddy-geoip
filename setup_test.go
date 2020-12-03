@@ -25,10 +25,22 @@ func get(replacer *caddy.Replacer, s string) string {
 	return val
 }
 
+func next(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 func TestReplacers(t *testing.T) {
 	dbhandler, err := maxminddb.Open("./test-data/GeoLite2-City.mmdb")
 	if err != nil {
 		t.Errorf("geoip: Can't open database: GeoLite2-City.mmdb")
+	}
+
+	buf := new(bytes.Buffer)
+
+	// shouldBuf determines whether to execute templates on this response,
+	// since generally we will not want to execute for images or CSS, etc.
+	shouldBuf := func(status int, header http.Header) bool {
+		return true
 	}
 
 	config := Config{}
@@ -40,32 +52,13 @@ func TestReplacers(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/", strings.NewReader(""))
 	r.RemoteAddr = "212.50.99.193"
-	// rr := caddyhttp.NewResponseRecorder(testResponseRecorder{
-	// 	ResponseWriterWrapper: &caddyhttp.ResponseWriterWrapper{ResponseWriter: },
-	// })
-
-	buf := new(bytes.Buffer)
-
-	// shouldBuf determines whether to execute templates on this response,
-	// since generally we will not want to execute for images or CSS, etc.
-	shouldBuf := func(status int, header http.Header) bool {
-		return true
-	}
 
 	rr := caddyhttp.NewResponseRecorder(caddyhttp.ResponseWriterWrapper{}, buf, shouldBuf)
-	// rr := caddyhttp.NewTestReplacer(r)
-
 	replacer := caddy.NewReplacer()
 	ctx := context.WithValue(r.Context(), caddy.ReplacerCtxKey, replacer)
 	*r = *r.WithContext(ctx)
 
-	// var replacer *caddy.Replacer
-
-	next := caddyhttp.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
-		return nil
-	})
-
-	l.ServeHTTP(rr, r, next)
+	l.ServeHTTP(rr, r, caddyhttp.HandlerFunc(next))
 
 	if got, want := get(replacer, "geoip_country_code"), "CY"; got != want {
 		t.Errorf("Expected custom placeholder {geoip_country_code} to be set (%s), but it wasn't; got: %s", want, got)
@@ -107,72 +100,71 @@ func TestReplacers(t *testing.T) {
 		t.Errorf("Expected custom placeholder {geoip_country_geoname_id} to be set (%s), but it wasn't; got: %s", want, got)
 	}
 
-	// //
-	// // Verify that a request via the loopback interface address results in
-	// // the expected placeholder values.
-	// //
-	// var loopback_placeholders = [][2]string{
-	// 	{"{geoip_country_code}", "**"},
-	// 	{"{geoip_country_name}", "Loopback"},
-	// 	{"{geoip_city_name}", "Loopback"},
-	// 	{"{geoip_country_geoname_id}", "0"},
-	// 	{"{geoip_city_geoname_id}", "0"},
-	// 	{"{geoip_latitude}", "0.000000"},
-	// 	{"{geoip_longitude}", "0.000000"},
-	// 	{"{geoip_geohash}", "s00000000000"},
-	// 	{"{geoip_time_zone}", ""},
-	// }
+	//
+	// Verify that a request via the loopback interface address results in
+	// the expected placeholder values.
+	//
+	var loopback_placeholders = [][2]string{
+		{"geoip_country_code", "**"},
+		{"geoip_country_name", "Loopback"},
+		{"geoip_city_name", "Loopback"},
+		{"geoip_country_geoname_id", "0"},
+		{"geoip_city_geoname_id", "0"},
+		{"geoip_latitude", "0.000000"},
+		{"geoip_longitude", "0.000000"},
+		{"geoip_geohash", "s00000000000"},
+		{"geoip_time_zone", ""},
+	}
 
-	// r = httptest.NewRequest("GET", "/", strings.NewReader(""))
-	// r.RemoteAddr = "127.0.0.1"
-	// rr = caddyhttp.NewResponseRecorder(testResponseRecorder{
-	// 	ResponseWriterWrapper: &caddyhttp.ResponseWriterWrapper{ResponseWriter: httptest.NewRecorder()},
-	// })
+	r = httptest.NewRequest("GET", "/", strings.NewReader(""))
+	r.RemoteAddr = "127.0.0.1"
 
-	// replacer = caddyhttp.NewReplacer(r, rr, "-")
+	rr = caddyhttp.NewResponseRecorder(caddyhttp.ResponseWriterWrapper{}, buf, shouldBuf)
+	replacer = caddy.NewReplacer()
+	ctx = context.WithValue(r.Context(), caddy.ReplacerCtxKey, replacer)
+	*r = *r.WithContext(ctx)
 
-	// l.ServeHTTP(rr, r)
+	l.ServeHTTP(rr, r, caddyhttp.HandlerFunc(next))
 
-	// for _, v := range loopback_placeholders {
-	// 	if got, want := replacer.Replace(v[0]), v[1]; got != want {
-	// 		t.Errorf("Expected custom placeholder %s to be set (%s), but it wasn't; got: %s", v[0], want, got)
-	// 	}
-	// }
+	for _, v := range loopback_placeholders {
+		if got, want := get(replacer, v[0]), v[1]; got != want {
+			t.Errorf("Expected custom placeholder %s to be set (%s), but it wasn't; got: %s", v[0], want, got)
+		}
+	}
 
-	// //
-	// // Verify that a request via a private address results in the expected
-	// // placeholder values. Note that the MaxMind DB doesn't include
-	// // location data for private addresses.
-	// //
-	// var private_addr_placeholders = [][2]string{
-	// 	{"{geoip_country_code}", "!!"},
-	// 	{"{geoip_country_name}", "No Country"},
-	// 	{"{geoip_city_name}", "No City"},
-	// 	{"{geoip_country_geoname_id}", "0"},
-	// 	{"{geoip_city_geoname_id}", "0"},
-	// 	{"{geoip_latitude}", "0.000000"},
-	// 	{"{geoip_longitude}", "0.000000"},
-	// 	{"{geoip_geohash}", "s00000000000"},
-	// 	{"{geoip_time_zone}", ""},
-	// }
+	//
+	// Verify that a request via a private address results in the expected
+	// placeholder values. Note that the MaxMind DB doesn't include
+	// location data for private addresses.
+	//
+	var private_addr_placeholders = [][2]string{
+		{"geoip_country_code", "!!"},
+		{"geoip_country_name", "No Country"},
+		{"geoip_city_name", "No City"},
+		{"geoip_country_geoname_id", "0"},
+		{"geoip_city_geoname_id", "0"},
+		{"geoip_latitude", "0.000000"},
+		{"geoip_longitude", "0.000000"},
+		{"geoip_geohash", "s00000000000"},
+		{"geoip_time_zone", ""},
+	}
 
-	// r = httptest.NewRequest("GET", "/", strings.NewReader(""))
-	// r.RemoteAddr = "192.168.0.1"
-	// rr = caddyhttp.NewResponseRecorder(testResponseRecorder{
-	// 	ResponseWriterWrapper: &caddyhttp.ResponseWriterWrapper{ResponseWriter: httptest.NewRecorder()},
-	// })
+	r = httptest.NewRequest("GET", "/", strings.NewReader(""))
+	r.RemoteAddr = "192.168.0.1"
 
-	// replacer = caddyhttp.NewReplacer(r, rr, "-")
+	rr = caddyhttp.NewResponseRecorder(caddyhttp.ResponseWriterWrapper{}, buf, shouldBuf)
+	replacer = caddy.NewReplacer()
+	ctx = context.WithValue(r.Context(), caddy.ReplacerCtxKey, replacer)
+	*r = *r.WithContext(ctx)
 
-	// l.ServeHTTP(rr, r)
+	l.ServeHTTP(rr, r, caddyhttp.HandlerFunc(next))
+	if got, want := get(replacer, "geoip_country_code"), "!!"; got != want {
+		t.Errorf("Expected custom placeholder {geoip_country_code} to be set (%s), but it wasn't; got: %s", want, got)
+	}
 
-	// if got, want := replacer.Replace("{geoip_country_code}"), "!!"; got != want {
-	// 	t.Errorf("Expected custom placeholder {geoip_country_code} to be set (%s), but it wasn't; got: %s", want, got)
-	// }
-
-	// for _, v := range private_addr_placeholders {
-	// 	if got, want := replacer.Replace(v[0]), v[1]; got != want {
-	// 		t.Errorf("Expected custom placeholder %s to be set (%s), but it wasn't; got: %s", v[0], want, got)
-	// 	}
-	// }
+	for _, v := range private_addr_placeholders {
+		if got, want := get(replacer, v[0]), v[1]; got != want {
+			t.Errorf("Expected custom placeholder %s to be set (%s), but it wasn't; got: %s", v[0], want, got)
+		}
+	}
 }
