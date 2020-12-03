@@ -1,7 +1,6 @@
 package geoip
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -23,7 +22,7 @@ func TestParseConfig(t *testing.T) {
 	expected := Config{
 		DatabasePath: "path/to/maxmind/db",
 	}
-	if !reflect.DeepEqual(expected, got) {
+	if expected != got {
 		t.Errorf("Expected %v got %v", expected, got)
 	}
 }
