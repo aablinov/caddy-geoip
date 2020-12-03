@@ -2,26 +2,34 @@ package geoip
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/caddyserver/caddy"
-	"github.com/caddyserver/caddy/caddyhttp/httpserver"
+	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
+	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/mmcloughlin/geohash"
 	"github.com/oschwald/maxminddb-golang"
 )
 
+// Init initializes the module
+func init() {
+	caddy.RegisterModule(GeoIP{})
+	httpcaddyfile.RegisterHandlerDirective("geoip", parseCaddyfile)
+}
+
 // GeoIP represents a middleware instance
 type GeoIP struct {
-	Next      httpserver.Handler
 	DBHandler *maxminddb.Reader
 	Config    Config
 }
 
-type GeoIPRecord struct {
+type geoIPRecord struct {
 	Country struct {
 		ISOCode           string            `maxminddb:"iso_code"`
 		IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
@@ -41,69 +49,72 @@ type GeoIPRecord struct {
 	} `maxminddb:"location"`
 }
 
-// Init initializes the plugin
-func init() {
-	caddy.RegisterPlugin("geoip", caddy.Plugin{
-		ServerType: "http",
-		Action:     setup,
-	})
+// CaddyModule returns the Caddy module information.
+func (GeoIP) CaddyModule() caddy.ModuleInfo {
+	return caddy.ModuleInfo{
+		ID:  "http.handlers.geoip",
+		New: func() caddy.Module { return new(GeoIP) },
+	}
 }
 
-func setup(c *caddy.Controller) error {
-	config, err := parseConfig(c)
+// Provision implements caddy.Provisioner.
+func (g *GeoIP) Provision(ctx caddy.Context) error {
+	dbPath := g.Config.DatabasePath
+	if dbPath == "" {
+		return fmt.Errorf("a db path is required")
+	}
+	dbhandler, err := maxminddb.Open(dbPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("geoip: Can't open database: " + dbPath)
 	}
-
-	dbhandler, err := maxminddb.Open(config.DatabasePath)
-	if err != nil {
-		return c.Err("geoip: Can't open database: " + config.DatabasePath)
-	}
-	// Create new middleware
-	newMiddleWare := func(next httpserver.Handler) httpserver.Handler {
-		return &GeoIP{
-			Next:      next,
-			DBHandler: dbhandler,
-			Config:    config,
-		}
-	}
-	// Add middleware
-	cfg := httpserver.GetConfig(c)
-	cfg.AddMiddleware(newMiddleWare)
-
+	g.DBHandler = dbhandler
 	return nil
 }
 
-func (gip GeoIP) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error) {
-	gip.lookupLocation(w, r)
-	return gip.Next.ServeHTTP(w, r)
-}
-
-func (gip GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
-	record := gip.fetchGeoipData(r)
-
-	replacer := newReplacer(r)
-	replacer.Set("geoip_country_code", record.Country.ISOCode)
-	replacer.Set("geoip_country_name", record.Country.Names["en"])
-	replacer.Set("geoip_country_eu", strconv.FormatBool(record.Country.IsInEuropeanUnion))
-	replacer.Set("geoip_country_geoname_id", strconv.FormatUint(record.Country.GeoNameID, 10))
-	replacer.Set("geoip_city_name", record.City.Names["en"])
-	replacer.Set("geoip_city_geoname_id", strconv.FormatUint(record.City.GeoNameID, 10))
-	replacer.Set("geoip_latitude", strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
-	replacer.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
-	replacer.Set("geoip_geohash", geohash.Encode(record.Location.Latitude, record.Location.Longitude))
-	replacer.Set("geoip_time_zone", record.Location.TimeZone)
-
-	if rr, ok := w.(*httpserver.ResponseRecorder); ok {
-		rr.Replacer = replacer
+// Validate implements caddy.Validator.
+func (g *GeoIP) Validate() error {
+	if g.DBHandler == nil {
+		return fmt.Errorf("no db")
 	}
+	return nil
 }
 
-func (gip GeoIP) fetchGeoipData(r *http.Request) GeoIPRecord {
+// ServeHTTP implements caddyhttp.MiddlewareHandler.
+func (g GeoIP) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	g.lookupLocation(w, r)
+	return next.ServeHTTP(w, r)
+}
+
+// Interface guards
+var (
+	_ caddy.Provisioner           = (*GeoIP)(nil)
+	_ caddy.Validator             = (*GeoIP)(nil)
+	_ caddyhttp.MiddlewareHandler = (*GeoIP)(nil)
+	_ caddyfile.Unmarshaler       = (*GeoIP)(nil)
+)
+
+func (g GeoIP) lookupLocation(w http.ResponseWriter, r *http.Request) {
+	repl := r.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
+
+	record := g.fetchGeoipData(r)
+
+	repl.Set("geoip_country_code", record.Country.ISOCode)
+	repl.Set("geoip_country_name", record.Country.Names["en"])
+	repl.Set("geoip_country_eu", strconv.FormatBool(record.Country.IsInEuropeanUnion))
+	repl.Set("geoip_country_geoname_id", strconv.FormatUint(record.Country.GeoNameID, 10))
+	repl.Set("geoip_city_name", record.City.Names["en"])
+	repl.Set("geoip_city_geoname_id", strconv.FormatUint(record.City.GeoNameID, 10))
+	repl.Set("geoip_latitude", strconv.FormatFloat(record.Location.Latitude, 'f', 6, 64))
+	repl.Set("geoip_longitude", strconv.FormatFloat(record.Location.Longitude, 'f', 6, 64))
+	repl.Set("geoip_geohash", geohash.Encode(record.Location.Latitude, record.Location.Longitude))
+	repl.Set("geoip_time_zone", record.Location.TimeZone)
+}
+
+func (g GeoIP) fetchGeoipData(r *http.Request) geoIPRecord {
 	clientIP, _ := getClientIP(r, true)
 
-	var record = GeoIPRecord{}
-	err := gip.DBHandler.Lookup(clientIP, &record)
+	var record = geoIPRecord{}
+	err := g.DBHandler.Lookup(clientIP, &record)
 	if err != nil {
 		log.Println(err)
 	}
@@ -153,8 +164,4 @@ func getClientIP(r *http.Request, strict bool) (net.IP, error) {
 	}
 
 	return parsedIP, nil
-}
-
-func newReplacer(r *http.Request) httpserver.Replacer {
-	return httpserver.NewReplacer(r, nil, "")
 }
