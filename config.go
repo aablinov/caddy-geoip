@@ -12,12 +12,12 @@ type Config struct {
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
-func (m *GeoIP) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+func (g *GeoIP) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	for d.Next() {
 		if !d.NextArg() {
 			continue
 		}
-		m.Config.DatabasePath = d.Val()
+		g.Config.DatabasePath = d.Val()
 	}
 	return nil
 }
