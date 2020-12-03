@@ -10,7 +10,6 @@ import (
 func TestParseConfig(t *testing.T) {
 	h := httpcaddyfile.Helper{
 		Dispenser: caddyfile.NewTestDispenser(`
-		localhost:8080
 		geoip path/to/maxmind/db
 		`),
 	}

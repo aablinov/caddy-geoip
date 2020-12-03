@@ -52,7 +52,7 @@ type geoIPRecord struct {
 // CaddyModule returns the Caddy module information.
 func (GeoIP) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.geo_ip",
+		ID:  "http.handlers.geoip",
 		New: func() caddy.Module { return new(GeoIP) },
 	}
 }
@@ -61,7 +61,7 @@ func (GeoIP) CaddyModule() caddy.ModuleInfo {
 func (g *GeoIP) Provision(ctx caddy.Context) error {
 	dbPath := g.Config.DatabasePath
 	if dbPath == "" {
-		return fmt.Errorf("an output stream is required")
+		return fmt.Errorf("a db path is required")
 	}
 	dbhandler, err := maxminddb.Open(dbPath)
 	if err != nil {
